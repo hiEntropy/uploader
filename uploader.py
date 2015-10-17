@@ -47,12 +47,12 @@ This methods purpose it to perform the OAuth2 process with drop box.  The
 process is shamelessly copied from the Dropbox docs. Why reinvent the wheel right???
 
 This method should, in the end, return a client object.  This will allow access to
-the other drop box methods. 
+the other dropbox methods. 
 '''
 def dropBoxAuth():
     #need to find a better way to do this
-    apiKey="47plyhtmn6vjvoe"
-    appSecret="wedb6thg70mfkji"
+    apiKey=""
+    appSecret=""
 
     #let dropbox know i'm legit
     flow=dropbox.client.DropboxOAuth2FlowNoRedirect(apiKey,appSecret)
@@ -71,7 +71,11 @@ def dropBoxAuth():
         print("Login Failed")
 
 '''
-
+Uses the requests library to send a get request. This method
+returns a connection object when the request is successful and
+returns None when the function fails. A dictionary can be passed
+as the data argument if you would like to send query information
+with the get request. 
 '''
 def getRequest(url,data=None):
     try:
