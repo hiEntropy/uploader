@@ -1,9 +1,10 @@
 import os
 import sys
-import dropbox
+#import dropbox
 import requests
 import gzip
 import shutil
+import tarfile
 '''
 Basic Design Idea
 
@@ -38,6 +39,31 @@ def printFiles(startFile):
     for dirPath,dirNames,fileNames in os.walk(startFile):
         for x in fileNames:
             print(dirPath+"\\"+x)
+
+
+'''
+Traverses the specified directory and subdirectory using the os.walk method
+the file names are all added to a list and then returned as a list.
+
+The startFile is the root of the subtree in the directory structure that you
+would like the method to start at.  The method will gather filenames and dir
+
+The startFile parameter must be a directory.  If this is not a directory
+the method will return None
+
+see printFiles comments for a synopsis of the os.walk function or for more detail
+go to python docs
+'''
+def getFileNames(startFile):
+    if os.path.isdir(startFile):
+        filenames=[]
+        for dirPath,dirNames,fileNames in os.walk(startFile):
+            for x in fileNames:
+                filenames.append(x)
+        return filenames
+    else:
+        return None
+
 '''
 Problems:
 I don't want to store my apiKey and appSecret in plain text because that is not secure
@@ -93,39 +119,56 @@ def writeToFile(content,fileName):
         return True
     return False
 
+
+
 '''
 Uses gzip to compress files. If dst is specified and exists
 the zipped file will be moved to the specified location.
-shutil.move() is used to make file moves
+
+The dst file must be a tarfile.  If the designated file is not
+a tarfile one will be created. 
+
+fileNames needs to be a list of strings that correspond to file names
+
 
 '''
-def compress(file,dst=None):
-    if os.path.isfile(file):
-        zippedName=file+".gz"
-        try:
-            with open(file,"rb") as file_in:
-                with gzip.open(zippedName,'wb') as file_out:
-                    shutil.copyfileobj(file_in, file_out)
-            if dst!=None:
-                shutil.move(zippedName,dst)
-            return True
-        except:
-            return False
-    else:
-        return False
+def compress(fileNames,dst=None):
+    tar=None
+    count=0
+    
+    tar=tarfile.open(dst,"w",)
+    for x in fileNames:
+        if os.path.isfile(x):
+            zippedName=x+".gz"
+            try:
+                with open(x,"rb") as file_in:
+                    with gzip.open(zippedName,'wb') as file_out:
+                        shutil.copyfileobj(file_in, file_out)
+                        count+=1
+                if dst!=None:
+                    tar.add(zippedName)
+            except:
+                print("A problem occured while processing "+x)
+    print(str(count)+" Files Compressed")
+
+
 
 '''
-Determines if the location passed exists in the current working directory
-and if it does 
+The upload part of this needs to be added.
+NEEDS TO BE TESTED more but works in a perfect case
+
+This is going to be a sort of process and control method
+for sending files to dropbox. 
+
 '''
-def concatWithCwd(location):
-    if os.path.isdir(location) or os.path.isfile(location):
-        return os.getcwd()+"/"+location
-    else:
-        return None
+def collectAndUpload(startFile):
+    fileNames=getFileNames(startFile)
+    holderFile="holder_file"
+    compress(fileNames,holderFile)
 
 
 def main():
-    print(compress("oauth2dropboxtraffic.pcapng","compressTest"))
+    
+    collectAndUpload(os.getcwd())
 
 main()
