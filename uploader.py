@@ -1,10 +1,11 @@
-import os
+from os import walk, remove,stat,getcwd
+from os.path import isdir, isfile
 import sys
-#import dropbox
-import requests
-import gzip
-import shutil
-import tarfile
+import dropbox
+from requests import get
+from gzip import open
+from shutil import copyfileobj
+import tarfile 
 '''
 Basic Design Idea
 
@@ -36,7 +37,7 @@ https://www.dropbox.com/developers-v1/core/docs/python#
 
 
 def printFiles(startFile):
-    for dirPath,dirNames,fileNames in os.walk(startFile):
+    for dirPath,dirNames,fileNames in walk(startFile):
         for x in fileNames:
             print(dirPath+"\\"+x)
 
@@ -55,9 +56,9 @@ see printFiles comments for a synopsis of the os.walk function or for more detai
 go to python docs
 '''
 def getFileNames(startFile):
-    if os.path.isdir(startFile):
+    if isdir(startFile):
         filenames=[]
-        for dirPath,dirNames,fileNames in os.walk(startFile):
+        for dirPath,dirNames,fileNames in walk(startFile):
             for x in fileNames:
                 filenames.append(x)
         return filenames
@@ -105,7 +106,7 @@ with the get request.
 '''
 def getRequest(url,data=None):
     try:
-        req=requests.get(url,params=data)
+        req=get(url,params=data)
         return req
     except:
         return None
@@ -135,22 +136,65 @@ fileNames needs to be a list of strings that correspond to file names
 def compress(fileNames,dst=None):
     tar=None
     count=0
-    
     tar=tarfile.open(dst,"w",)
     for x in fileNames:
-        if os.path.isfile(x):
+        if isfile(x):
             zippedName=x+".gz"
             try:
                 with open(x,"rb") as file_in:
                     with gzip.open(zippedName,'wb') as file_out:
-                        shutil.copyfileobj(file_in, file_out)
+                        copyfileobj(file_in, file_out)
                         count+=1
                 if dst!=None:
                     tar.add(zippedName)
+                    remove(zippedName)
             except:
                 print("A problem occured while processing "+x)
+    tar.close()
     print(str(count)+" Files Compressed")
 
+
+'''
+This is supposed to upload files that are in excess of 150mb limit
+that Dropbox has placed on the dropbox.put_file() method
+Parameters:
+    file:
+        must be a file object or path in the form of a string.
+
+Returns:
+    True if the process succeeded else false
+
+
+NEEDS TESTING
+'''
+def uploadBigFile(file,client):
+    size=getFileSize(file)
+    uploadAttempts=0
+    uploader=None
+    filePath=""    
+    if type(file) is str:
+        filePath=file
+    else:
+        filePath=file.name
+    uploader=client.get_chunked_uploader(file,size)
+    while uploader.offset<size and uploadAttempts<5:
+        try:
+            upload=uploader.upload_chunked()
+            uploadAttempts=0
+        except:
+            uploadAttempts+=1
+            upload=upload=uploader.upload_chunked()
+    uploader.finish(filePath)
+
+
+def getFileSize(file):
+    try:
+        return stat(file).st_size
+    except:
+        try:
+            return stat(file.name).st_size
+        except:
+            return -1
 
 
 '''
@@ -166,9 +210,12 @@ def collectAndUpload(startFile):
     holderFile="holder_file"
     compress(fileNames,holderFile)
 
+    #dont forget to remove the tar file with os.remove("holder_file")
+
 
 def main():
-    
-    collectAndUpload(os.getcwd())
+    file=open("uploader.py","r")
+    print(getFileSize(file))
+    #collectAndUpload(os.getcwd())
 
 main()
