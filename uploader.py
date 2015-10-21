@@ -205,17 +205,20 @@ This is going to be a sort of process and control method
 for sending files to dropbox. 
 
 '''
-def collectAndUpload(startFile):
+def collectAndUpload(startFile,client):
     fileNames=getFileNames(startFile)
-    holderFile="holder_file"
-    compress(fileNames,holderFile)
+    if len(fileNames)>0:
+        holderFile="holder_file"
+        compress(fileNames,holderFile)
+        uploadBigFile(holderFile,client)
+    else:
+        print("No files in specified directory")
 
     #dont forget to remove the tar file with os.remove("holder_file")
 
 
 def main():
-    file=open("uploader.py","r")
-    print(getFileSize(file))
-    #collectAndUpload(os.getcwd())
+    client=dropBoxAuth()
+    collectAndUpload(os.getcwd())
 
 main()
