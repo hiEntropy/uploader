@@ -88,9 +88,10 @@ def dropBoxAuth():
     print ('1. Go to: ' + authorizationURL)
     print ('2. Click "Allow" (you might have to log in first)')
     print ('3. Copy the authorization code.')
-    code = input("Enter the authorization code here: ").strip()
+    code = raw_input("Enter the authorization code here: ").strip()
     access_token, user_id = flow.finish(code)
     client = dropbox.client.DropboxClient(access_token)
+    
     if client:
         print("Succesful Login")
         return client
@@ -174,6 +175,7 @@ def uploadBigFile(file,client):
     filePath=""    
     if type(file) is str:
         filePath=file
+        file=open(filePath,"rw")
     else:
         filePath=file.name
     uploader=client.get_chunked_uploader(file,size)
@@ -183,7 +185,7 @@ def uploadBigFile(file,client):
             uploadAttempts=0
         except:
             uploadAttempts+=1
-            upload=upload=uploader.upload_chunked()
+            upload=uploader.upload_chunked()
     uploader.finish(filePath)
 
 
@@ -219,6 +221,6 @@ def collectAndUpload(startFile,client):
 
 def main():
     client=dropBoxAuth()
-    collectAndUpload(os.getcwd())
+    collectAndUpload(getcwd(),client)
 
 main()
