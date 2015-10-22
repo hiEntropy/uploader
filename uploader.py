@@ -5,7 +5,9 @@ import dropbox
 from requests import get
 import gzip
 from shutil import copyfileobj
-import tarfile 
+import tarfile
+
+
 '''
 Basic Design Idea
 
@@ -35,11 +37,6 @@ Link for all python methods in the API
 https://www.dropbox.com/developers-v1/core/docs/python#
 '''
 
-
-def printFiles(startFile):
-    for dirPath,dirNames,fileNames in walk(startFile):
-        for x in fileNames:
-            print(dirPath+"\\"+x)
 
 
 '''
@@ -98,30 +95,6 @@ def dropBoxAuth():
     else:
         print("Login Failed")
 
-'''
-Uses the requests library to send a get request. This method
-returns a connection object when the request is successful and
-returns None when the function fails. A dictionary can be passed
-as the data argument if you would like to send query information
-with the get request. 
-'''
-def getRequest(url,data=None):
-    try:
-        req=get(url,params=data)
-        return req
-    except:
-        return None
-
-'''
-
-'''
-def writeToFile(content,fileName):
-    with open(fileName,'a') as out:                            
-        out.write(content)
-        return True
-    return False
-
-
 
 '''
 Uses gzip to compress files. If dst is specified and exists
@@ -156,6 +129,21 @@ def compressAddToTar(fileNames,dst=None):
     print(str(count)+" Files Compressed")
     return tar.name
 
+
+'''
+Since gzip doesn't take directories or folders this method exists
+to compress the tar file created by compressAddToTar() to a gzip file
+so that the chucked_uploader() method will upload it to dropbox.
+
+Parameters;
+fileName: String representation of a file
+
+returns:
+No return val
+
+Exception:
+Prints a message
+'''
 def compress(fileName):
     zippedName=fileName+".gz"
     try:
@@ -169,7 +157,9 @@ def compress(fileName):
     
 '''
 This is supposed to upload files that are in excess of 150mb limit
-that Dropbox has placed on the dropbox.put_file() method
+that Dropbox has placed on the dropbox.put_file() method.  The upload_chunked()
+only takes gzip files.. So Files must be run through the compress() method before
+they are sent here. 
 
 
 Parameters:
@@ -214,7 +204,16 @@ def uploadBigFile(file,client):
     uploader.finish(filePath)
     return uploadDetails
 
+'''
+This is used in the uploadBigFile() method to make let the uploader
+how big the file to be uploaded is 
+parameters:
+a file path as a string or a file object
 
+return:
+the size of the file in bytes or -1 if the operation fails 
+
+'''
 def getFileSize(file):
     try:
         return stat(file).st_size
