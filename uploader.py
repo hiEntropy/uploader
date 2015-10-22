@@ -158,9 +158,17 @@ def compress(fileNames,dst=None):
 '''
 This is supposed to upload files that are in excess of 150mb limit
 that Dropbox has placed on the dropbox.put_file() method
+
+
 Parameters:
     file:
         must be a file object or path in the form of a string.
+local Vars:
+    size is the size of the file in bytes
+    uploadAttempts is the number of upload attempts for the current chunk
+    uploader is the uploader object
+    uploadDetails is the data returned by get_chunked_uploader
+    filePath is a string representation of the filePath
 
 Returns:
     True if the process succeeded else false
@@ -172,21 +180,27 @@ def uploadBigFile(file,client):
     size=getFileSize(file)
     uploadAttempts=0
     uploader=None
+    uploadDetails=None
     filePath=""    
     if type(file) is str:
         filePath=file
         file=open(filePath,"rw")
     else:
         filePath=file.name
-    uploader=client.get_chunked_uploader(file,size)
+    try:
+        uploader=client.get_chunked_uploader(file,size)
+    except:
+        print("Unable to open file")
+
     while uploader.offset<size and uploadAttempts<5:
         try:
-            upload=uploader.upload_chunked()
+            uploadDetails=uploader.upload_chunked()
             uploadAttempts=0
         except:
             uploadAttempts+=1
-            upload=uploader.upload_chunked()
+            uploadDetails=uploader.upload_chunked()
     uploader.finish(filePath)
+    return uploadDetails
 
 
 def getFileSize(file):
