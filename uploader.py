@@ -3,7 +3,7 @@ from os.path import isdir, isfile
 import sys
 import dropbox
 from requests import get
-from gzip import open
+import gzip
 from shutil import copyfileobj
 import tarfile 
 '''
@@ -78,8 +78,8 @@ the other dropbox methods.
 '''
 def dropBoxAuth():
     #need to find a better way to do this
-    apiKey=""
-    appSecret=""
+    apiKey="47plyhtmn6vjvoe"
+    appSecret="wedb6thg70mfkji"
 
     #let dropbox know i'm legit
     flow=dropbox.client.DropboxOAuth2FlowNoRedirect(apiKey,appSecret)
@@ -134,7 +134,7 @@ fileNames needs to be a list of strings that correspond to file names
 
 
 '''
-def compress(fileNames,dst=None):
+def compressAddToTar(fileNames,dst=None):
     tar=None
     count=0
     tar=tarfile.open(dst,"w",)
@@ -149,12 +149,24 @@ def compress(fileNames,dst=None):
                 if dst!=None:
                     tar.add(zippedName)
                     remove(zippedName)
-            except:
+            except Exception as e:
+                print(e.message, e.args)
                 print("A problem occured while processing "+x)
     tar.close()
     print(str(count)+" Files Compressed")
+    return tar.name
 
+def compress(fileName):
+    zippedName=fileName+".gz"
+    try:
+        with open(fileName,"rb") as file_in:
+            with gzip.open(zippedName,'wb') as file_out:
+                copyfileobj(file_in, file_out)
+                count+=1
+    except:
+        print("A problem occured while processing "+fileName)
 
+    
 '''
 This is supposed to upload files that are in excess of 150mb limit
 that Dropbox has placed on the dropbox.put_file() method
@@ -178,7 +190,7 @@ NEEDS TESTING
 '''
 def uploadBigFile(file,client):
     size=getFileSize(file)
-    uploadAttempts=0
+    uploadAttempts=1
     uploader=None
     uploadDetails=None
     filePath=""    
@@ -195,7 +207,7 @@ def uploadBigFile(file,client):
     while uploader.offset<size and uploadAttempts<5:
         try:
             uploadDetails=uploader.upload_chunked()
-            uploadAttempts=0
+            uploadAttempts=1
         except:
             uploadAttempts+=1
             uploadDetails=uploader.upload_chunked()
@@ -225,8 +237,10 @@ def collectAndUpload(startFile,client):
     fileNames=getFileNames(startFile)
     if len(fileNames)>0:
         holderFile="holder_file"
-        compress(fileNames,holderFile)
-        uploadBigFile(holderFile,client)
+        holderFile=compressAddToTar(fileNames,holderFile)
+        if holderFile!=None:
+            compress(holderFile)
+            uploadBigFile(holderFile,client)
     else:
         print("No files in specified directory")
 
