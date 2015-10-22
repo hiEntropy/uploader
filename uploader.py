@@ -40,17 +40,17 @@ https://www.dropbox.com/developers-v1/core/docs/python#
 
 
 '''
-Traverses the specified directory and subdirectory using the os.walk method
+Traverses the specified directory and subdirectories using the os.walk method
 the file names are all added to a list and then returned as a list.
 
-The startFile is the root of the subtree in the directory structure that you
+parameters:
+startFile is the root of the subtree in the directory structure that you
 would like the method to start at.  The method will gather filenames and dir
+The startFile parameter must be a directory.
 
-The startFile parameter must be a directory.  If this is not a directory
+returns:
+list if successful and If the startFile is not a directory
 the method will return None
-
-see printFiles comments for a synopsis of the os.walk function or for more detail
-go to python docs
 '''
 def getFileNames(startFile):
     if isdir(startFile):
@@ -75,8 +75,8 @@ the other dropbox methods.
 '''
 def dropBoxAuth():
     #need to find a better way to do this
-    apiKey="47plyhtmn6vjvoe"
-    appSecret="wedb6thg70mfkji"
+    apiKey=""
+    appSecret=""
 
     #let dropbox know i'm legit
     flow=dropbox.client.DropboxOAuth2FlowNoRedirect(apiKey,appSecret)
@@ -88,7 +88,6 @@ def dropBoxAuth():
     code = raw_input("Enter the authorization code here: ").strip()
     access_token, user_id = flow.finish(code)
     client = dropbox.client.DropboxClient(access_token)
-    
     if client:
         print("Succesful Login")
         return client
@@ -104,8 +103,6 @@ The dst file must be a tarfile.  If the designated file is not
 a tarfile one will be created. 
 
 fileNames needs to be a list of strings that correspond to file names
-
-
 '''
 def compressAddToTar(fileNames,dst=None):
     tar=None
