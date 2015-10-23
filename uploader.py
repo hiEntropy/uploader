@@ -75,8 +75,8 @@ the other dropbox methods.
 '''
 def dropBoxAuth():
     #need to find a better way to do this
-    apiKey=""
-    appSecret=""
+    apiKey="ya3vf3jy6w7j821"
+    appSecret="xzug5m2kq7hj3qv"
 
     #let dropbox know i'm legit
     flow=dropbox.client.DropboxOAuth2FlowNoRedirect(apiKey,appSecret)
@@ -147,8 +147,8 @@ def compress(fileName):
         with open(fileName,"rb") as file_in:
             with gzip.open(zippedName,'wb') as file_out:
                 copyfileobj(file_in, file_out)
-                count+=1
-    except:
+    except Exception as e:
+        print(e.message, e.args)
         print("A problem occured while processing "+fileName)
 
     
@@ -175,7 +175,7 @@ Returns:
 
 NEEDS TESTING
 '''
-def uploadBigFile(file,client):
+def uploadBigFile(file,dropBoxFilePath,client):
     size=getFileSize(file)
     uploadAttempts=1
     uploader=None
@@ -198,7 +198,7 @@ def uploadBigFile(file,client):
         except:
             uploadAttempts+=1
             uploadDetails=uploader.upload_chunked()
-    uploader.finish(filePath)
+    uploader.finish(dropBoxFilePath)
     return uploadDetails
 
 '''
@@ -236,7 +236,9 @@ def collectAndUpload(startFile,client):
         holderFile=compressAddToTar(fileNames,holderFile)
         if holderFile!=None:
             compress(holderFile)
-            uploadBigFile(holderFile,client)
+            uploadBigFile(holderFile,client,holderFile)
+            remove(holderFile)
+            
     else:
         print("No files in specified directory")
 
