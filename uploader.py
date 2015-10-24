@@ -57,7 +57,7 @@ def getFileNames(startFile):
         filenames=[]
         for dirPath,dirNames,fileNames in walk(startFile):
             for x in fileNames:
-                filenames.append(x)
+                filenames.append(dirPath+"/"+x)
         return filenames
     else:
         return None
@@ -75,8 +75,8 @@ the other dropbox methods.
 '''
 def dropBoxAuth():
     #need to find a better way to do this
-    apiKey="ya3vf3jy6w7j821"
-    appSecret="xzug5m2kq7hj3qv"
+    apiKey=""
+    appSecret=""
 
     #let dropbox know i'm legit
     flow=dropbox.client.DropboxOAuth2FlowNoRedirect(apiKey,appSecret)
@@ -86,13 +86,15 @@ def dropBoxAuth():
     print ('2. Click "Allow" (you might have to log in first)')
     print ('3. Copy the authorization code.')
     code = raw_input("Enter the authorization code here: ").strip()
-    access_token, user_id = flow.finish(code)
-    client = dropbox.client.DropboxClient(access_token)
-    if client:
-        print("Succesful Login")
+    try:
+        access_token, user_id = flow.finish(code)
+        client = dropbox.client.DropboxClient(access_token)
+        print("Login Successful")
         return client
-    else:
+    except dbrest.ErrorResponse, e:
         print("Login Failed")
+        print('Error: %s' % (e,))
+        return
 
 
 '''
@@ -111,6 +113,7 @@ def compressAddToTar(fileNames,dst=None):
     for x in fileNames:
         if isfile(x):
             zippedName=x+".gz"
+            print(zippedName)
             try:
                 with open(x,"rb") as file_in:
                     with gzip.open(zippedName,'wb') as file_out:
@@ -131,6 +134,7 @@ def compressAddToTar(fileNames,dst=None):
 Since gzip doesn't take directories or folders this method exists
 to compress the tar file created by compressAddToTar() to a gzip file
 so that the chucked_uploader() method will upload it to dropbox.
+
 
 Parameters;
 fileName: String representation of a file
@@ -229,24 +233,40 @@ This is going to be a sort of process and control method
 for sending files to dropbox. 
 
 '''
-def collectAndUpload(startFile,client):
+def collectAndUpload(startFile,client,holderFile="holder_file"):
+    
     fileNames=getFileNames(startFile)
-    if len(fileNames)>0:
-        holderFile="holder_file"
+    print(len(fileNames)+" Files found. Starting compression")
+    if fileNames!=None and len(fileNames)>0:
         holderFile=compressAddToTar(fileNames,holderFile)
-        if holderFile!=None:
+        if holderFile:
             compress(holderFile)
-            uploadBigFile(holderFile,client,holderFile)
-            remove(holderFile)
-            
+            uploadBigFile(holderFile,holderFile,client)
+            remove(holderFile)    
     else:
         print("No files in specified directory")
 
-    #dont forget to remove the tar file with os.remove("holder_file")
+
+'''
+[path,startFile]
+
+startFile should be a specific file or cd for Current Directory
+
+endFile should be the dirpath that the upload should be added to.
 
 
+'''
 def main():
-    client=dropBoxAuth()
-    collectAndUpload(getcwd(),client)
+    if len(sys.argv)==2:
+        print("Getting "+sys.argv[1])
+        client=dropBoxAuth()
+        collectAndUpload(sys.argv[1],client)
+    elif len(sys.argv)==1:
+        print("Getting Current Working Directory "+getcwd())
+        client=dropBoxAuth()
+        collectAndUpload(getcwd(),client)
+    else:
+        print("Please use appropriate arguments upload.py startDir or upload.py")
+
 
 main()
