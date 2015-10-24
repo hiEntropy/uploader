@@ -6,6 +6,7 @@ from requests import get
 import gzip
 from shutil import copyfileobj
 import tarfile
+import time
 
 
 '''
@@ -234,10 +235,9 @@ for sending files to dropbox.
 
 '''
 def collectAndUpload(startFile,client,holderFile="holder_file"):
-    
     fileNames=getFileNames(startFile)
-    print(len(fileNames)+" Files found. Starting compression")
     if fileNames!=None and len(fileNames)>0:
+        print(str(len(fileNames))+" Files found. Starting compression")
         holderFile=compressAddToTar(fileNames,holderFile)
         if holderFile:
             compress(holderFile)
@@ -257,6 +257,7 @@ endFile should be the dirpath that the upload should be added to.
 
 '''
 def main():
+    start=time.time()
     if len(sys.argv)==2:
         print("Getting "+sys.argv[1])
         client=dropBoxAuth()
@@ -267,6 +268,8 @@ def main():
         collectAndUpload(getcwd(),client)
     else:
         print("Please use appropriate arguments upload.py startDir or upload.py")
+    endtime=time.time()
+    print("This took "+str((endtime-start)/60)+ " minutes")
 
 
 main()
