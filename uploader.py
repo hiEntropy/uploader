@@ -227,11 +227,19 @@ def getFileSize(file):
 
 
 '''
-The upload part of this needs to be added.
-NEEDS TO BE TESTED more but works in a perfect case
+This method controls the flow of the program
 
-This is going to be a sort of process and control method
-for sending files to dropbox. 
+Parameters
+startFile: should be a filepath to where the program should start executing
+
+client: is the dropbox client object returned from the authorization process
+
+holderFile: is the name of the file that will hold the results of the search
+and is set to a default of "holder_file"
+
+return:
+returns true if it was successful false otherwise and prints status updates
+based on the results as well
 
 '''
 def collectAndUpload(startFile,client,holderFile="holder_file"):
@@ -242,12 +250,23 @@ def collectAndUpload(startFile,client,holderFile="holder_file"):
         if holderFile:
             compress(holderFile)
             uploadBigFile(holderFile,holderFile,client)
-            remove(holderFile)    
+            remove(holderFile).
+            return True
+        else:
+            print("File compressed but not uploaded")
+            return False
     else:
         print("No files in specified directory")
+        return False
 
 
 '''
+Option 1
+[path]
+this will make the startfile the current working directory and
+leaves the endfile as holder_file
+
+Option 2
 [path,startFile]
 
 startFile should be a specific file or cd for Current Directory
