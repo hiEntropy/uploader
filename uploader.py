@@ -177,8 +177,6 @@ local Vars:
 Returns:
     True if the process succeeded else false
 
-
-NEEDS TESTING
 '''
 def uploadBigFile(file,dropBoxFilePath,client):
     size=getFileSize(file)
@@ -195,6 +193,7 @@ def uploadBigFile(file,dropBoxFilePath,client):
         uploader=client.get_chunked_uploader(file,size)
     except:
         print("Unable to open file")
+        return False
 
     while uploader.offset<size and uploadAttempts<5:
         try:
@@ -203,7 +202,10 @@ def uploadBigFile(file,dropBoxFilePath,client):
         except:
             uploadAttempts+=1
             uploadDetails=uploader.upload_chunked()
-    uploader.finish(dropBoxFilePath)
+    if uploadAttempts>4:
+        return False
+    else:
+        uploader.finish(dropBoxFilePath)
     return uploadDetails
 
 '''
